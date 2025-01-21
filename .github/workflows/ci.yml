@@ -75,9 +75,4 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           TF_WORKSPACE: "default"
       
-      # Step 8: Debugg
-      - name: Print Terraform version
-        run: terraform version
 
-      - name: List .terraform directory
-        run: ls -la .terraform
