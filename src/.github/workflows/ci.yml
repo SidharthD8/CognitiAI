@@ -1,0 +1,78 @@
+name: Terraform CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        description: 'Deploy changes'
+        default: false
+
+jobs:
+  terraform:
+    name: Terraform Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the Code
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set Up Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      # Step 3: Cache Clear
+      - name: Cache Terraform providers
+        uses: actions/cache@v2
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-
+
+      # Step 4: Terraform Init
+      - name: Terraform Init
+        run: terraform init -input=false -backend=false
+        working-directory: ./src
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      # Step 5: Terraform Validate
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./src
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      # Step 6: Terraform Plan
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan -input=false
+        working-directory: ./src
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_WORKSPACE: "default"
+
+      # Step 7: Terraform Apply (Conditional)
+      - name: Terraform Apply
+        if: ${{ inputs.deploy }}
+        run: terraform apply -auto-approve tfplan
+        working-directory: ./src
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_WORKSPACE: "default"
+      
+
