@@ -8,21 +8,66 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        description: 'Deploy changes'
+        default: false
 
 jobs:
   terraform:
-    runs-on: ubuntu-24.04
+    name: Terraform Pipeline
+    runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # Step 1: Checkout the Code
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v3.1.2
+      # Step 2: Set Up Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
 
-    - name: Terraform Init
-      run: terraform init -input=false -backend=false
-      working-directory: ./src
+      # Step 3: Terraform Init
+      - name: Terraform Init
+        run: terraform init -input=false -backend=false
+        working-directory: ./src
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
-    - name: Terraform Validate
-      run: terraform validate
-      working-directory: ./src
+      # Step 4: Terraform Validate
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./src
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      # Step 5: Terraform Plan
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan -input=false
+        working-directory: ./src
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_WORKSPACE: "default"
+
+      # Step 6: Terraform Apply (Conditional)
+      - name: Terraform Apply
+        if: ${{ inputs.deploy }}
+        run: terraform apply -auto-approve tfplan
+        working-directory: ./src
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_WORKSPACE: "default"
