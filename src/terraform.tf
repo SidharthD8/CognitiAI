@@ -3,6 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
+      version = ""
     }
     azapi = {
       source  = "azure/azapi"
@@ -20,7 +21,6 @@ terraform {
 }
 # Default provider configuration for azurerm
 provider "azurerm" {
-  version = ">= 4.0.0, < 5.0.0"
   features {}
   storage_use_azuread = true
 }
