@@ -22,7 +22,16 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # Step 3: Terraform Init
+      # Step 3: Cache Clear
+      - name: Cache Terraform providers
+        uses: actions/cache@v2
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-
+
+      # Step 4: Terraform Init
       - name: Terraform Init
         run: terraform init -input=false -backend=false
         working-directory: ./src
@@ -32,7 +41,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
-      # Step 4: Terraform Validate
+      # Step 5: Terraform Validate
       - name: Terraform Validate
         run: terraform validate
         working-directory: ./src
@@ -42,7 +51,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
-      # Step 5: Terraform Plan
+      # Step 6: Terraform Plan
       - name: Terraform Plan
         id: plan
         run: terraform plan -out=tfplan -input=false
@@ -54,7 +63,7 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           TF_WORKSPACE: "default"
 
-      # Step 6: Terraform Apply (Conditional)
+      # Step 7: Terraform Apply (Conditional)
       - name: Terraform Apply
         if: ${{ inputs.deploy }}
         run: terraform apply -auto-approve tfplan
@@ -65,3 +74,10 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           TF_WORKSPACE: "default"
+      
+      # Step 8: Debugg
+      - name: Print Terraform version
+        run: terraform version
+
+      - name: List .terraform directory
+        run: ls -la .terraform
