@@ -1,6 +1,5 @@
 module "avm-res-network-virtualnetwork" {
   source              = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version             = "0.7.1"
   name                = var.name
   resource_group_name = var.resource_group_name
   address_space       = [var.address_space]
